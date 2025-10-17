@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "shevchenko.grpc";
+option java_outer_classname = "AnimalServiceProto";
+
+service AnimalService {
+  rpc GetAnimalById(AnimalRequest) returns (AnimalResponse);
+  rpc GetAllAnimals(Empty) returns (AnimalsList);
+
+  // Додаємо RPC для усиновлення
+  rpc AdoptAnimal(AdoptRequest) returns (AdoptResponse);
+
+  // Нове RPC для оновлення healthStatus
+  rpc UpdateHealthStatus(UpdateHealthRequest) returns (UpdateHealthResponse);
+}
+
+message AnimalRequest { int64 id = 1; }
+message AnimalResponse {
+  int64 id = 1;
+  string name = 2;
+  string species = 3;
+  int32 age = 4;
+  string healthStatus = 5;
+  bool adopted = 6;
+  string arrivalDate = 7;
+}
+message Empty {}
+message AnimalsList { repeated AnimalResponse animals = 1; }
+
+message AdoptRequest {
+  int64 id = 1;
+}
+message AdoptResponse {
+  bool success = 1;
+  string message = 2;
+  AnimalResponse animal = 3;
+}
+
+// Нове повідомлення для оновлення healthStatus
+message UpdateHealthRequest {
+  int64 id = 1;          // ID тварини
+  string healthStatus = 2; // новий статус здоров'я
+}
+
+message UpdateHealthResponse {
+  bool success = 1;
+  string message = 2;
+  AnimalResponse animal = 3;
+}
