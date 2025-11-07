@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .user-info {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info .username {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .logout-btn {
+            padding: 8px 20px;
+            background: #f44336;
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .card-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .card p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            padding: 20px;
+        }
+
+        .login-prompt {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .login-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #4caf50;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    {#if authenticated}
+        <div class="user-info">
+            <div>
+                <span>👤 Вітаємо, </span>
+                <span class="username">{username}</span>
+            </div>
+            <a href="/logout" class="logout-btn">🚪 Вийти</a>
+        </div>
+    {#else}
+        <div class="login-prompt">
+            <h3>⚠️ Для доступу до системи потрібна авторизація</h3>
+            <a href="/animals" class="login-btn">🔐 Увійти</a>
+        </div>
+    {/if}
+
+    <header>
+        <h1>🐾 {title}</h1>
+        <p class="subtitle">Система управління притулком для тварин</p>
+    </header>
+
+    <div class="cards">
+        <div class="card">
+            <div class="card-icon">🐕</div>
+            <h2>Тварини</h2>
+            <p>Перегляд всіх тварин у притулку, їх статус та інформація про здоров'я</p>
+            <a href="/animals" class="btn">Переглянути тварин</a>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">❤️</div>
+            <h2>Усиновлення</h2>
+            <p>Список усиновлених тварин та інформація про нових власників</p>
+            <a href="/adoptions" class="btn">Переглянути усиновлення</a>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">🏥</div>
+            <h2>Медичні записи</h2>
+            <p>Історія медичних оглядів, діагнози та призначене лікування</p>
+            <a href="/health-records" class="btn">Переглянути записи</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Animal Shelter Management System | Powered by Quarkus + Keycloak</p>
+    </footer>
+</div>
+</body>
+</html>

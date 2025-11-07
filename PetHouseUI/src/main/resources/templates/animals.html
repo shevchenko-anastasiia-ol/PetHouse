@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тварини в притулку</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2em;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .back-btn, .add-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        .add-btn {
+            background: #4caf50;
+        }
+
+        .back-btn:hover {
+            background: #764ba2;
+        }
+
+        .add-btn:hover {
+            background: #45a049;
+        }
+
+        .animals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .animal-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+
+        .animal-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .animal-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .animal-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .animal-species {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .animal-body {
+            padding: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-adopted {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-available {
+            background: #2196f3;
+            color: white;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #eee;
+        }
+
+        .btn-edit, .btn-delete, .btn-adopt {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.3s;
+        }
+
+        .btn-edit {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-adopt {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-edit:hover, .btn-delete:hover, .btn-adopt:hover {
+            opacity: 0.8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-save, .btn-cancel {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .btn-save {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #999;
+            color: white;
+        }
+
+        .error, .success {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🐾 Тварини в притулку</h1>
+        <div class="header-buttons">
+            <button class="add-btn" onclick="openAddModal()">➕ Додати тварину</button>
+            <a href="/" class="back-btn">← Назад</a>
+        </div>
+    </header>
+
+    <div id="message"></div>
+
+    {#if error}
+        <div class="error">
+            <h2>⚠️ Помилка</h2>
+            <p>{error}</p>
+        </div>
+    {#else}
+        <div class="animals-grid" id="animalsGrid">
+            {#for animal in animals}
+                <div class="animal-card" id="animal-{animal.id}">
+                    <div class="animal-header">
+                        <div class="animal-name">{animal.name}</div>
+                        <div class="animal-species">{animal.species}</div>
+                    </div>
+                    <div class="animal-body">
+                        <div class="info-row">
+                            <span class="info-label">ID:</span>
+                            <span class="info-value">{animal.id}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Вік:</span>
+                            <span class="info-value">{animal.age} {#if animal.age == 1}рік{#else}роки/років{/if}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Стан здоров'я:</span>
+                            <span class="info-value">{animal.healthStatus}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Статус:</span>
+                            <span class="info-value">
+                            {#if animal.adopted}
+                                <span class="status-badge status-adopted">Усиновлений</span>
+                            {#else}
+                                <span class="status-badge status-available">Доступний</span>
+                            {/if}
+                        </span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-edit" onclick='openEditModal({animal.id}, "{animal.name}", "{animal.species}", {animal.age}, "{animal.healthStatus}", {animal.adopted})'>✏️ Редагувати</button>
+                            {#if !animal.adopted}
+                                <button class="btn-adopt" onclick="adoptAnimal({animal.id})">❤️ Усиновити</button>
+                            {/if}
+                            <button class="btn-delete" onclick="deleteAnimal({animal.id})">🗑️ Видалити</button>
+                        </div>
+                    </div>
+                </div>
+            {/for}
+        </div>
+    {/if}
+</div>
+
+<!-- Modal for Add/Edit -->
+<div class="modal" id="animalModal">
+    <div class="modal-content">
+        <div class="modal-header" id="modalTitle">Додати тварину</div>
+        <form id="animalForm" onsubmit="return false;">
+            <input type="hidden" id="animalId">
+            <div class="form-group">
+                <label for="name">Ім'я *</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="species">Вид *</label>
+                <select id="species" required>
+                    <option value="">Оберіть вид</option>
+                    <option value="Dog">Собака</option>
+                    <option value="Cat">Кіт</option>
+                    <option value="Rabbit">Кролик</option>
+                    <option value="Bird">Птах</option>
+                    <option value="Other">Інше</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="age">Вік *</label>
+                <input type="number" id="age" min="0" max="30" required>
+            </div>
+            <div class="form-group">
+                <label for="healthStatus">Стан здоров'я *</label>
+                <input type="text" id="healthStatus" required>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-save" onclick="saveAnimal()">💾 Зберегти</button>
+                <button type="button" class="btn-cancel" onclick="closeModal()">❌ Скасувати</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8081/animals';
+
+    function showMessage(message, isError) {
+        isError = isError || false;
+        const messageDiv = document.getElementById('message');
+        messageDiv.className = isError ? 'error' : 'success';
+        messageDiv.innerHTML = '<p>' + message + '</p>';
+        setTimeout(function() {
+            messageDiv.innerHTML = '';
+        }, 5000);
+    }
+
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = 'Додати тварину';
+        document.getElementById('animalForm').reset();
+        document.getElementById('animalId').value = '';
+        document.getElementById('animalModal').classList.add('active');
+    }
+
+    function openEditModal(id, name, species, age, healthStatus, adopted) {
+        document.getElementById('modalTitle').textContent = 'Редагувати тварину';
+        document.getElementById('animalId').value = id;
+        document.getElementById('name').value = name;
+        document.getElementById('species').value = species;
+        document.getElementById('age').value = age;
+        document.getElementById('healthStatus').value = healthStatus;
+        document.getElementById('animalModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('animalModal').classList.remove('active');
+    }
+
+    async function saveAnimal() {
+        const id = document.getElementById('animalId').value;
+        const animal = {
+            id: id || null,
+            name: document.getElementById('name').value,
+            species: document.getElementById('species').value,
+            age: parseInt(document.getElementById('age').value),
+            healthStatus: document.getElementById('healthStatus').value,
+            adopted: false
+        };
+
+        try {
+            const method = id ? 'PUT' : 'POST';
+            const response = await fetch(API_URL, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(animal)
+            });
+
+            if (response.ok) {
+                showMessage(id ? 'Тварину успішно оновлено!' : 'Тварину успішно додано!');
+                closeModal();
+                setTimeout(function() { window.location.reload(); }, 1000);
+            } else {
+                showMessage('Помилка при збереженні тварини', true);
+            }
+        } catch (error) {
+            showMessage('Помилка з\'єднання: ' + error.message, true);
+        }
+    }
+
+    async function deleteAnimal(id) {
+        if (!confirm('Ви впевнені, що хочете видалити цю тварину?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(API_URL + '/' + id, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                showMessage('Тварину успішно видалено!');
+                document.getElementById('animal-' + id).remove();
+            } else {
+                showMessage('Помилка при видаленні тварини', true);
+            }
+        } catch (error) {
+            showMessage('Помилка з\'єднання: ' + error.message, true);
+        }
+    }
+
+    async function adoptAnimal(id) {
+        try {
+            const response = await fetch(API_URL + '/' + id + '/adopt', {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                showMessage('Тварину успішно усиновлено!');
+                setTimeout(function() { window.location.reload(); }, 1000);
+            } else if (response.status === 409) {
+                showMessage('Тварина вже усиновлена', true);
+            } else {
+                showMessage('Помилка при усиновленні', true);
+            }
+        } catch (error) {
+            showMessage('Помилка з\'єднання: ' + error.message, true);
+        }
+    }
+
+    document.getElementById('animalModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+</script>
+</body>
+</html>

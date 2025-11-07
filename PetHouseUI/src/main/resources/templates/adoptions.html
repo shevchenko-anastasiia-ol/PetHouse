@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Усиновлення</title>
+    <style>
+        /* твій стиль залишається без змін */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 { color: #667eea; font-size: 2em; }
+        .header-buttons { display: flex; gap: 10px; }
+        .back-btn, .add-btn {
+            padding: 10px 20px; background: #667eea; color: white;
+            text-decoration: none; border-radius: 8px; font-weight: bold;
+            border: none; cursor: pointer;
+        }
+        .add-btn { background: #e91e63; }
+        .back-btn:hover { background: #764ba2; }
+        .add-btn:hover { background: #c2185b; }
+        .adoptions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 25px; }
+        .adoption-card {
+            background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            overflow: hidden; transition: transform 0.3s;
+        }
+        .adoption-card:hover { transform: translateY(-5px); }
+        .adoption-header {
+            padding: 20px; background: linear-gradient(135deg, #e91e63 0%, #f44336 100%);
+            color: white;
+        }
+        .adopter-name { font-size: 1.6em; font-weight: bold; margin-bottom: 5px; }
+        .adoption-id { font-size: 0.9em; opacity: 0.9; }
+        .adoption-body { padding: 20px; }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { font-weight: bold; color: #555; }
+        .info-value { color: #333; text-align: right; max-width: 60%; }
+        .notes {
+            margin-top: 15px; padding: 15px; background: #f5f5f5;
+            border-radius: 8px; border-left: 4px solid #e91e63;
+        }
+        .notes-label { font-weight: bold; color: #555; margin-bottom: 5px; }
+        .notes-text { color: #666; font-style: italic; }
+        .card-actions { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 2px solid #eee; }
+        .btn-edit, .btn-delete {
+            flex: 1; padding: 8px; border: none; border-radius: 5px;
+            cursor: pointer; font-weight: bold; transition: opacity 0.3s;
+        }
+        .btn-edit { background: #ff9800; color: white; }
+        .btn-delete { background: #f44336; color: white; }
+        .btn-edit:hover, .btn-delete:hover { opacity: 0.8; }
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+            z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 15px;
+            width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header { font-size: 1.5em; color: #e91e63; margin-bottom: 20px; font-weight: bold; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 10px; border: 2px solid #ddd;
+            border-radius: 5px; font-size: 1em; font-family: inherit;
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #e91e63; }
+        .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-save, .btn-cancel { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1em; }
+        .btn-save { background: #4caf50; color: white; }
+        .btn-cancel { background: #999; color: white; }
+        .error, .success { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .error { background: #ffebee; color: #c62828; border-left: 4px solid #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>❤️ Усиновлення</h1>
+        <div class="header-buttons">
+            <button class="add-btn" onclick="openAddModal()">➕ Додати усиновлення</button>
+            <a href="/" class="back-btn">← Назад</a>
+        </div>
+    </header>
+
+    <div id="message"></div>
+
+    {#if error}
+        <div class="error">
+            <h2>⚠️ Помилка</h2>
+            <p>{error}</p>
+        </div>
+    {#else}
+        <div class="adoptions-grid" id="adoptionsGrid">
+            {#for adoption in adoptions}
+                <div class="adoption-card" id="adoption-{adoption.id}">
+                    <div class="adoption-header">
+                        <div class="adopter-name">{adoption.adopterName}</div>
+                        <div class="adoption-id">Усиновлення #{adoption.id}</div>
+                    </div>
+                    <div class="adoption-body">
+                        <div class="info-row">
+                            <span class="info-label">ID тварини:</span>
+                            <span class="info-value">{adoption.animalId}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Контакт:</span>
+                            <span class="info-value">{adoption.adopterContact}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Дата усиновлення:</span>
+                            <span class="info-value">{adoption.adoptionDate}</span>
+                        </div>
+                        {#if adoption.notes}
+                            <div class="notes">
+                                <div class="notes-label">📝 Примітки:</div>
+                                <div class="notes-text">{adoption.notes}</div>
+                            </div>
+                        {/if}
+                        <div class="card-actions">
+                            <button class="btn-edit"
+                                    data-id="{adoption.id}"
+                                    data-animalid="{adoption.animalId}"
+                                    data-name="{adoption.adopterName}"
+                                    data-contact="{adoption.adopterContact}"
+                                    data-date="{adoption.adoptionDate}"
+                                    data-notes="{adoption.notes ?: ''}"
+                                    onclick="openEditModalFromButton(this)">
+                                ✏️ Редагувати
+                            </button>
+
+                            <button class="btn-delete">
+                                🗑️ Видалити
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+            {/for}
+        </div>
+    {/if}
+</div>
+
+<!-- Modal -->
+<div class="modal" id="adoptionModal">
+    <div class="modal-content">
+        <div class="modal-header" id="modalTitle">Додати усиновлення</div>
+        <form id="adoptionForm" onsubmit="return false;">
+            <input type="hidden" id="adoptionId">
+            <div class="form-group">
+                <label for="animalId">ID тварини *</label>
+                <input type="number" id="animalId" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="adopterName">Ім'я усиновлювача *</label>
+                <input type="text" id="adopterName" required>
+            </div>
+            <div class="form-group">
+                <label for="adopterContact">Контакт *</label>
+                <input type="text" id="adopterContact" placeholder="+380671234567" required>
+            </div>
+            <div class="form-group">
+                <label for="adoptionDate">Дата усиновлення *</label>
+                <input type="date" id="adoptionDate" required>
+            </div>
+            <div class="form-group">
+                <label for="notes">Примітки</label>
+                <textarea id="notes" placeholder="Додаткова інформація..."></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-save" onclick="saveAdoption()">💾 Зберегти</button>
+                <button type="button" class="btn-cancel" onclick="closeModal()">❌ Скасувати</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const API_URL = "http://localhost:8080/adoptions";
+
+    function showMessage(message, isError) {
+        const div = document.getElementById("message");
+        div.className = isError ? "error" : "success";
+        div.innerHTML = "<p>" + message + "</p>";
+        setTimeout(() => div.innerHTML = "", 5000);
+    }
+
+    function openAddModal() {
+        document.getElementById("modalTitle").textContent = "Додати усиновлення";
+        document.getElementById("adoptionForm").reset();
+        document.getElementById("adoptionId").value = "";
+        document.getElementById("adoptionDate").valueAsDate = new Date();
+        document.getElementById("adoptionModal").classList.add("active");
+    }
+
+    function openEditModal(id, animalId, adopterName, adopterContact, adoptionDate, notes) {
+        document.getElementById("modalTitle").textContent = "Редагувати усиновлення";
+        document.getElementById("adoptionId").value = id;
+        document.getElementById("animalId").value = animalId;
+        document.getElementById("adopterName").value = adopterName;
+        document.getElementById("adopterContact").value = adopterContact;
+        document.getElementById("adoptionDate").value = adoptionDate;
+        document.getElementById("notes").value = notes || "";
+        document.getElementById("adoptionModal").classList.add("active");
+    }
+
+    function closeModal() {
+        document.getElementById("adoptionModal").classList.remove("active");
+    }
+
+    async function saveAdoption() {
+        const id = document.getElementById("adoptionId").value;
+        const adoption = {
+            id: id || null,
+            animalId: parseInt(document.getElementById("animalId").value),
+            adopterName: document.getElementById("adopterName").value,
+            adopterContact: document.getElementById("adopterContact").value,
+            adoptionDate: document.getElementById("adoptionDate").value,
+            notes: document.getElementById("notes").value
+        };
+
+        try {
+            let response;
+            if (id) {
+                response = await fetch(API_URL + "/" + id, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(adoption)
+                });
+            } else {
+                response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(adoption)
+                });
+            }
+
+            if (response.ok) {
+                showMessage(id ? "Усиновлення оновлено!" : "Усиновлення додано!");
+                closeModal();
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                const text = await response.text();
+                showMessage("Помилка при збереженні: " + text, true);
+            }
+        } catch (err) {
+            showMessage("Помилка з'єднання: " + err.message, true);
+        }
+    }
+
+    async function deleteAdoption(id) {
+        if (!confirm("Видалити це усиновлення?")) return;
+        try {
+            const response = await fetch(API_URL + "/" + id, { method: "DELETE" });
+            if (response.ok || response.status === 204) {
+                showMessage("Усиновлення видалено!");
+                document.getElementById("adoption-" + id).remove();
+            } else showMessage("Помилка при видаленні", true);
+        } catch (err) {
+            showMessage("Помилка з'єднання: " + err.message, true);
+        }
+    }
+
+    document.getElementById("adoptionModal").addEventListener("click", e => {
+        if (e.target === e.currentTarget) closeModal();
+    });
+
+    function openEditModalFromButton(btn) {
+        // Qute вже підставить значення у data-атрибути
+        const id = btn.getAttribute('data-id');
+        const animalId = btn.getAttribute('data-animalid');
+        const name = btn.getAttribute('data-name') || '';
+        const contact = btn.getAttribute('data-contact') || '';
+        const date = btn.getAttribute('data-date') || '';
+        const notes = btn.getAttribute('data-notes') || '';
+
+        // Викликаємо існуючу ф-цію, яка очікує правильні типи
+        openEditModal(Number(id), Number(animalId), name, contact, date, notes);
+    }
+</script>
+</body>
+</html>

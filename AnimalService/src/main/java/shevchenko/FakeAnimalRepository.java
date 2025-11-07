@@ -45,25 +45,28 @@ public class FakeAnimalRepository {
             existing.species = animal.species;
             existing.age = animal.age;
             existing.healthStatus = animal.healthStatus;
-            existing.adopted = animal.adopted; // тепер працює з Optional правильно
+            existing.adopted = animal.adopted;
             return existing;
         } else {
             throw new RuntimeException("Animal not found");
         }
     }
 
-    // Новий метод для маркування як усиновленого
+    public boolean delete(Long id) {
+        return animals.removeIf(a -> a.id.equals(id));
+    }
+
     public boolean adoptAnimal(Long id) {
         Optional<Animal> existingOpt = findById(id);
         if (existingOpt.isPresent()) {
             Animal existing = existingOpt.get();
             if (existing.adopted) {
-                return false; // вже усиновлений
+                return false;
             }
             existing.adopted = true;
             return true;
         }
-        return false; // тварини з таким id не існує
+        return false;
     }
 
     public Animal updateHealthStatus(Long animalId, String status) {

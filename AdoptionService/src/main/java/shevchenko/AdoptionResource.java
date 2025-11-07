@@ -24,7 +24,6 @@ public class AdoptionResource {
         return service.getAll();
     }
 
-    // Отримати усиновлення за id
     @GET
     @Path("/{id}")
     public Response getById(@PathParam("id") Long id) {
@@ -34,12 +33,11 @@ public class AdoptionResource {
                 .build();
     }
 
-    // Оновити усиновлення
     @PUT
     @Path("/{id}")
     public Response update(@PathParam("id") Long id, Adoption adoption) {
         try {
-            adoption.id = id; // переконуємось, що id збігається
+            adoption.id = id;
             Adoption updated = service.updateAdoption(adoption);
             return Response.ok(updated).build();
         } catch (RuntimeException e) {
@@ -47,7 +45,6 @@ public class AdoptionResource {
         }
     }
 
-    // Видалити усиновлення
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") Long id) {

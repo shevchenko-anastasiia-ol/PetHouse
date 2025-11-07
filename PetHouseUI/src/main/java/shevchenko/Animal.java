@@ -19,4 +19,3 @@ public class Animal {
         this.adopted = adopted;
     }
 }
-
