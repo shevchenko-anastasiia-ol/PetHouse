@@ -196,7 +196,7 @@
 </div>
 
 <script>
-    const API_URL = "http://localhost:8080/adoptions";
+    const API_URL = "/api/adoptions";
 
     function showMessage(message, isError) {
         const div = document.getElementById("message");
@@ -231,17 +231,21 @@
     async function saveAdoption() {
         const id = document.getElementById("adoptionId").value;
         const adoption = {
-            id: id || null,
             animalId: parseInt(document.getElementById("animalId").value),
             adopterName: document.getElementById("adopterName").value,
             adopterContact: document.getElementById("adopterContact").value,
             adoptionDate: document.getElementById("adoptionDate").value,
             notes: document.getElementById("notes").value
         };
+        
+        // Only include id for updates
+        if (id && id.trim() !== '') {
+            adoption.id = parseInt(id);
+        }
 
         try {
             let response;
-            if (id) {
+            if (id && id.trim() !== '') {
                 response = await fetch(API_URL + "/" + id, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -260,10 +264,12 @@
                 closeModal();
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                const text = await response.text();
-                showMessage("Помилка при збереженні: " + text, true);
+                const errorText = await response.text();
+                console.error('Error response:', response.status, errorText);
+                showMessage("Помилка при збереженні: " + (errorText || response.statusText), true);
             }
         } catch (err) {
+            console.error('Fetch error:', err);
             showMessage("Помилка з'єднання: " + err.message, true);
         }
     }

@@ -1,0 +1,166 @@
+{
+  "realm": "pethouse",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Regular user role"
+      },
+      {
+        "name": "vet",
+        "description": "Veterinarian role"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator role"
+      }
+    ]
+  },
+
+  "users": [
+    {
+      "username": "anastasiia",
+      "enabled": true,
+      "email": "anastasiia@pethouse.com",
+      "firstName": "Anastasiia",
+      "lastName": "Shevchenko",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ae0069ck2008"
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "vet",
+      "enabled": true,
+      "email": "bob@pethouse.com",
+      "firstName": "Bob",
+      "lastName": "Johnson",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "vet"
+        }
+      ],
+      "realmRoles": ["vet"]
+    },
+    {
+      "username": "admin1",
+      "enabled": true,
+      "email": "admin@pethouse.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin1"
+        }
+      ],
+      "realmRoles": ["admin", "vet", "user"]
+    }
+  ],
+
+  "clients": [
+    {
+      "clientId": "pethouse-ui",
+      "name": "PetHouse UI Application",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://localhost:8081/*"
+      ],
+      "webOrigins": ["*"],
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access"]
+    },
+    {
+      "clientId": "animal-service",
+      "name": "Animal Service",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email"]
+    },
+    {
+      "clientId": "adoption-service",
+      "name": "Adoption Service",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email"]
+    },
+    {
+      "clientId": "health-service",
+      "name": "Health Service",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "email"]
+    }
+  ],
+
+  "clientScopes": [
+    {
+      "name": "roles",
+      "description": "OpenID Connect scope for user roles",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "client roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "resource_access.${client_id}.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ]
+    }
+  ],
+
+  "browserFlow": "browser",
+  "registrationFlow": "registration",
+  "directGrantFlow": "direct grant",
+  "resetCredentialsFlow": "reset credentials",
+  "clientAuthenticationFlow": "clients"
+}

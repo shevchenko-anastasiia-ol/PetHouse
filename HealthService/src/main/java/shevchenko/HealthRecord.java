@@ -1,16 +1,31 @@
 package shevchenko;
 
 import java.time.LocalDate;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
 
-public class HealthRecord {
-    public Long id;
+@Entity
+@Table(name = "health_records")
+public class HealthRecord extends PanacheEntity {
+    @Column(name = "animalid")
     public Long animalId;
+    
+    @Column(name = "visitdate")
     public LocalDate visitDate;
+    
+    @Column(name = "vetname")
     public String vetName;
+    
     public String diagnosis;
     public String treatment;
     public String notes;
+    
+    @Column(name = "nextappointment")
     public LocalDate nextAppointment;
+    
+    @Column(name = "healthstatus")
     public String healthStatus;
 
     public HealthRecord() {}

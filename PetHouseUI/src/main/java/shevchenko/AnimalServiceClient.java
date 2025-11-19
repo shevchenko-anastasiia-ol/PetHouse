@@ -3,7 +3,6 @@ package shevchenko;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import java.util.List;
 
@@ -25,6 +24,10 @@ public interface AnimalServiceClient {
 
     @PUT
     Animal updateAnimal(Animal animal);
+
+    @DELETE
+    @Path("/{id}")
+    Response deleteAnimal(@PathParam("id") Long id);
 
     @POST
     @Path("/{id}/adopt")

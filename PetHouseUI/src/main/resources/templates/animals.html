@@ -384,7 +384,7 @@
 </div>
 
 <script>
-    const API_URL = 'http://localhost:8081/animals';
+    const API_URL = '/api/animals';
 
     function showMessage(message, isError) {
         isError = isError || false;
@@ -420,13 +420,17 @@
     async function saveAnimal() {
         const id = document.getElementById('animalId').value;
         const animal = {
-            id: id || null,
             name: document.getElementById('name').value,
             species: document.getElementById('species').value,
             age: parseInt(document.getElementById('age').value),
             healthStatus: document.getElementById('healthStatus').value,
             adopted: false
         };
+        
+        // Only include id for updates
+        if (id && id.trim() !== '') {
+            animal.id = parseInt(id);
+        }
 
         try {
             const method = id ? 'PUT' : 'POST';
@@ -443,9 +447,12 @@
                 closeModal();
                 setTimeout(function() { window.location.reload(); }, 1000);
             } else {
-                showMessage('Помилка при збереженні тварини', true);
+                const errorText = await response.text();
+                console.error('Error response:', response.status, errorText);
+                showMessage('Помилка при збереженні тварини: ' + (errorText || response.statusText), true);
             }
         } catch (error) {
+            console.error('Fetch error:', error);
             showMessage('Помилка з\'єднання: ' + error.message, true);
         }
     }

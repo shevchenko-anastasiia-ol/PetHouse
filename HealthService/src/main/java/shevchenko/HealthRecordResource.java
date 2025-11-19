@@ -16,8 +16,19 @@ public class HealthRecordResource {
     HealthRecordService service;
 
     @POST
-    public HealthRecord create(HealthRecord record) {
-        return service.create(record);
+    public Response create(HealthRecord record) {
+        try {
+            System.out.println("HealthRecordResource.create() called");
+            System.out.println("Record data: animalId=" + record.animalId + ", vetName=" + record.vetName);
+            HealthRecord created = service.create(record);
+            return Response.ok(created).build();
+        } catch (Exception e) {
+            System.err.println("Error in HealthRecordResource.create(): " + e.getMessage());
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error creating health record: " + e.getMessage())
+                    .build();
+        }
     }
 
     @GET

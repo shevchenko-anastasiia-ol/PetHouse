@@ -1,11 +1,20 @@
 package shevchenko;
 
-public class Animal {
-    public Long id;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
+
+@Entity
+@Table(name = "animals")
+public class Animal extends PanacheEntity {
     public String name;
     public String species;
     public int age;
+    
+    @Column(name = "healthstatus")
     public String healthStatus;
+    
     public boolean adopted;
 
     public Animal() {}

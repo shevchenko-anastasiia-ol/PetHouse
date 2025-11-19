@@ -1,48 +1,73 @@
 package shevchenko;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
 public class AdoptionService {
-    @Inject
-    FakeAdoptionRepository repository;
     @RestClient
     AnimalRestClient animalClient;
 
-
     public List<Adoption> getAll() {
-        return repository.findAll();
+        return Adoption.listAll();
     }
 
     public Optional<Adoption> getById(Long id) {
-        return repository.findById(id);
+        return Adoption.findByIdOptional(id);
     }
 
     public Optional<Adoption> getByAnimalId(Long animalId) {
-        return repository.findByAnimalId(animalId);
+        return Adoption.find("animalId", animalId).firstResultOptional();
     }
 
+    @Transactional
     public Adoption createAdoption(Adoption adoption) {
-        return repository.save(adoption);
+        // For new entities, ensure ID is null so Panache generates it
+        adoption.id = null;
+        if (adoption.adoptionDate == null) {
+            adoption.adoptionDate = LocalDate.now();
+        }
+
+        adoption.persistAndFlush();
+        return adoption;
     }
 
+    @Transactional
     public Adoption updateAdoption(Adoption adoption) {
-        return repository.update(adoption);
+        Adoption existing = Adoption.findById(adoption.id);
+        if (existing == null) {
+            throw new RuntimeException("Adoption record not found");
+        }
+        existing.animalId = adoption.animalId;
+        existing.adopterName = adoption.adopterName;
+        existing.adopterContact = adoption.adopterContact;
+        existing.adoptionDate = adoption.adoptionDate;
+        existing.notes = adoption.notes;
+        existing.persist();
+        return existing;
     }
 
+    @Transactional
     public boolean deleteAdoption(Long id) {
-        return repository.delete(id);
+        return Adoption.deleteById(id);
     }
 
-
+    @Transactional
     public Adoption adoptAnimal(Adoption adoption) {
-        Adoption saved = repository.save(adoption);
+        // For new entities, ensure ID is null so Panache generates it
+        adoption.id = null;
+        if (adoption.adoptionDate == null) {
+            adoption.adoptionDate = LocalDate.now();
+        }
+        adoption.persistAndFlush();
 
+        // Token propagation is handled automatically by Quarkus REST Client
+        // The token from the incoming request will be automatically propagated
         Response r = animalClient.adoptAnimal(adoption.animalId);
         if (r.getStatus() == 200) {
             System.out.println("Adoption confirmed: " + r.readEntity(String.class));
@@ -54,6 +79,6 @@ public class AdoptionService {
             throw new RuntimeException("Adoption failed: " + r.getStatus());
         }
 
-        return saved;
+        return adoption;
     }
 }
