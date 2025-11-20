@@ -27,7 +27,6 @@ public class AdoptionService {
 
     @Transactional
     public Adoption createAdoption(Adoption adoption) {
-        // For new entities, ensure ID is null so Panache generates it
         adoption.id = null;
         if (adoption.adoptionDate == null) {
             adoption.adoptionDate = LocalDate.now();
@@ -59,15 +58,12 @@ public class AdoptionService {
 
     @Transactional
     public Adoption adoptAnimal(Adoption adoption) {
-        // For new entities, ensure ID is null so Panache generates it
         adoption.id = null;
         if (adoption.adoptionDate == null) {
             adoption.adoptionDate = LocalDate.now();
         }
         adoption.persistAndFlush();
 
-        // Token propagation is handled automatically by Quarkus REST Client
-        // The token from the incoming request will be automatically propagated
         Response r = animalClient.adoptAnimal(adoption.animalId);
         if (r.getStatus() == 200) {
             System.out.println("Adoption confirmed: " + r.readEntity(String.class));

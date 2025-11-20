@@ -53,7 +53,6 @@ public class AnimalGrpcService extends AnimalServiceGrpc.AnimalServiceImplBase {
             );
             responseObserver.onCompleted();
         } catch (RuntimeException e) {
-            boolean notFound = e.getMessage().equals("Animal not found");
             responseObserver.onNext(
                     AdoptResponse.newBuilder()
                             .setSuccess(false)

@@ -1,6 +1,7 @@
 package shevchenko;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
@@ -9,26 +10,27 @@ import java.util.Optional;
 @ApplicationScoped
 public class AnimalService {
 
+    @Inject
+    AnimalRepository animalRepository;
+
     public List<Animal> getAll() {
-        return Animal.listAll();
+        return animalRepository.listAll();
     }
 
     public Optional<Animal> getById(Long id) {
-        return Animal.findByIdOptional(id);
+        return animalRepository.findByIdOptional(id);
     }
 
     @Transactional
     public Animal createAnimal(Animal animal) {
-        // For new entities, ensure ID is null so Panache generates it
-        // Always clear ID for create operations - Panache will auto-generate it
         animal.id = null;
-        animal.persistAndFlush(); // Force immediate insert to catch any errors
+        animalRepository.persistAndFlush(animal);
         return animal;
     }
 
     @Transactional
     public Animal updateAnimal(Animal animal) {
-        Animal existing = Animal.findById(animal.id);
+        Animal existing = animalRepository.findById(animal.id);
         if (existing == null) {
             throw new RuntimeException("Animal not found");
         }
@@ -37,19 +39,18 @@ public class AnimalService {
         existing.age = animal.age;
         existing.healthStatus = animal.healthStatus;
         existing.adopted = animal.adopted;
-        existing.persist();
+        animalRepository.persist(existing);
         return existing;
     }
 
     @Transactional
     public boolean deleteAnimal(Long id) {
-        return Animal.deleteById(id);
+        return animalRepository.deleteById(id);
     }
 
-    // Метод для зміни статусу adopted (викликається через gRPC/REST з Adoption Service)
     @Transactional
     public Animal markAsAdopted(Long id) {
-        Animal animal = Animal.findById(id);
+        Animal animal = animalRepository.findById(id);
         if (animal == null) {
             throw new RuntimeException("Animal not found");
         }
@@ -59,18 +60,18 @@ public class AnimalService {
         }
 
         animal.adopted = true;
-        animal.persist();
+        animalRepository.persist(animal);
         return animal;
     }
 
     @Transactional
     public Animal updateHealthStatus(Long id, String status) {
-        Animal animal = Animal.findById(id);
-
-
+        Animal animal = animalRepository.findById(id);
+        if (animal == null) {
+            throw new RuntimeException("Animal not found");
+        }
         animal.healthStatus = status;
-            animal.persist();
-            return animal;
-
+        animalRepository.persist(animal);
+        return animal;
     }
 }

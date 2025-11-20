@@ -23,7 +23,6 @@ public class HealthRecordService {
             System.out.println("Animal retrieved: " + (animal != null ? animal.name : "null"));
             if (animal == null) throw new RuntimeException("Animal not found");
 
-            // For new entities, ensure ID is null so Panache generates it
             if (record.id != null) {
                 HealthRecord existing = HealthRecord.findById(record.id);
                 if (existing != null) {
@@ -41,12 +40,10 @@ public class HealthRecordService {
                 record.visitDate = LocalDate.now();
             }
 
-            // Зберігаємо медичний запис
             System.out.println("Persisting health record...");
             record.persist();
             System.out.println("Health record persisted with ID: " + record.id);
 
-            // Оновлюємо статус тварини у AnimalService
             System.out.println("Updating animal health status to: " + record.healthStatus);
             animalClient.updateHealthStatus(record.animalId, record.healthStatus);
             System.out.println("Animal health status updated successfully");
