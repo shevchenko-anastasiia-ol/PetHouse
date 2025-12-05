@@ -16,6 +16,10 @@ public interface AnimalRestClient {
     @GET
     List<Animal> getAllAnimals();
 
+    @GET
+    @Path("/{id}")
+    Response getAnimalById(@PathParam("id") Long id);
+
     @POST
     @Path("/{id}/adopt")
     Response adoptAnimal(@PathParam("id") Long id);

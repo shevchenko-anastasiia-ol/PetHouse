@@ -4,14 +4,24 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import jakarta.inject.Inject;
+
+
 
 @ApplicationScoped
 public class AdoptionService {
+    private static final Logger Log = Logger.getLogger(AdoptionService.class);
+    
     @RestClient
     AnimalRestClient animalClient;
+
+    @Inject
+    AdoptionEventProducer adoptionEventProducer;
+
 
     public List<Adoption> getAll() {
         return Adoption.listAll();
@@ -25,6 +35,10 @@ public class AdoptionService {
         return Adoption.find("animalId", animalId).firstResultOptional();
     }
 
+    public Optional<Adoption> findByAdopterAndAnimalIdsOptional(String adopterName, Long animalId) {
+        return Adoption.find("adopterName = ?1 and animalId = ?2", adopterName, animalId).firstResultOptional();
+    }
+
     @Transactional
     public Adoption createAdoption(Adoption adoption) {
         adoption.id = null;
@@ -33,6 +47,19 @@ public class AdoptionService {
         }
 
         adoption.persistAndFlush();
+
+        Long animalId = adoption.animalId;
+        String adopterName = adoption.adopterName;
+
+
+        adoptionEventProducer.send(
+                new AdoptionMessage(animalId, adopterName)
+        ).subscribe().with(
+            result -> {},
+            failure -> System.err.println("❌ [ADOPTION SERVICE] Failed to send message: " + failure.getMessage())
+        );
+
+
         return adoption;
     }
 
@@ -67,6 +94,17 @@ public class AdoptionService {
         Response r = animalClient.adoptAnimal(adoption.animalId);
         if (r.getStatus() == 200) {
             System.out.println("Adoption confirmed: " + r.readEntity(String.class));
+            
+            // Відправка асинхронного повідомлення про успішне усиновлення
+            Long animalId = adoption.animalId;
+            String adopterName = adoption.adopterName;
+            
+            AdoptionMessage message = new AdoptionMessage(animalId, adopterName);
+            adoptionEventProducer.send(message)
+                .subscribe().with(
+                    result -> System.out.println("✅ [ADOPTION SERVICE] Adoption message sent: Animal ID=" + animalId + ", Adopter=" + adopterName),
+                    failure -> System.err.println("❌ [ADOPTION SERVICE] Failed to send message: " + failure.getMessage())
+                );
         } else if (r.getStatus() == 404) {
             throw new RuntimeException("Animal not found");
         } else if (r.getStatus() == 409) {
@@ -77,4 +115,52 @@ public class AdoptionService {
 
         return adoption;
     }
+
+    @Transactional
+    public Adoption start(String adopterName, Long animalId) {
+        Log.infof("Starting adoption for %s with animal %s", adopterName, animalId);
+        
+        Optional<Adoption> adoptionOptional = findByAdopterAndAnimalIdsOptional(adopterName, animalId);
+        Adoption adoption;
+        
+        if (adoptionOptional.isPresent()) {
+            // received confirmed adoption before
+            adoption = adoptionOptional.get();
+            if (adoption.adoptionDate == null) {
+                adoption.adoptionDate = LocalDate.now();
+            }
+            adoption.persist();
+        } else {
+            // adoption starting right now
+            adoption = new Adoption();
+            adoption.adopterName = adopterName;
+            adoption.animalId = animalId;
+            adoption.adoptionDate = LocalDate.now();
+            adoption.persist();
+        }
+        
+        return adoption;
+    }
+
+    @Transactional
+    public Adoption end(String adopterName, Long animalId) {
+        Log.infof("Ending adoption for %s with animal %s", adopterName, animalId);
+        
+        Adoption adoption = findByAdopterAndAnimalIdsOptional(adopterName, animalId)
+            .orElseThrow(() -> new jakarta.ws.rs.NotFoundException("Adoption not found"));
+        
+        if (adoption.adoptionDate == null) {
+            Log.warn("Adoption is not confirmed: " + adoption);
+            // trigger error processing
+        }
+        
+        Response animalResponse = animalClient.getAnimalById(adoption.animalId);
+        if (animalResponse.getStatus() == 200) {
+            Log.infof("Animal information retrieved for adoption: %s", adoption);
+        }
+        
+        return adoption;
+    }
+
+
 }

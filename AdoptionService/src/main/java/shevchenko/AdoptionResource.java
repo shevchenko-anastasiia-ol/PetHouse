@@ -4,6 +4,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
 
 import java.util.List;
 
@@ -11,6 +12,8 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class AdoptionResource {
+    private static final Logger Log = Logger.getLogger(AdoptionResource.class);
+    
     @Inject
     AdoptionService service;
 
@@ -53,5 +56,23 @@ public class AdoptionResource {
             return Response.noContent().build();
         }
         return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    @Path("/start/{adopterName}/{animalId}")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public Adoption start(@PathParam("adopterName") String adopterName,
+                         @PathParam("animalId") Long animalId) {
+        Log.infof("Starting adoption for %s with animal %s", adopterName, animalId);
+        return service.start(adopterName, animalId);
+    }
+
+    @Path("/end/{adopterName}/{animalId}")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public Adoption end(@PathParam("adopterName") String adopterName,
+                       @PathParam("animalId") Long animalId) {
+        Log.infof("Ending adoption for %s with animal %s", adopterName, animalId);
+        return service.end(adopterName, animalId);
     }
 }
