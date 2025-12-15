@@ -1,33 +1,50 @@
 package shevchenko;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.time.LocalDateTime;
 
+/**
+ * ВАЖЛИВО: Цей клас дубльований в adoption-service та health-service
+ * При зміні треба оновити ОБА проєкти!
+ *
+ * Повідомлення про усиновлення тварини для RabbitMQ
+ */
+@RegisterForReflection
 public class AdoptionMessage {
 
     @JsonProperty("animal_id")
-    public Long animalId;
+    private Long animalId;
 
     @JsonProperty("adopter_name")
-    public String adopterName;
+    private String adopterName;
 
     @JsonProperty("adoption_id")
-    public Long adoptionId;
+    private Long adoptionId;
 
     @JsonProperty("adoption_date")
-    public LocalDateTime adoptionDate;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    private LocalDateTime adoptionDate;
 
     @JsonProperty("event_type")
-    public String eventType; // ADOPTION_CREATED, ADOPTION_CANCELLED, ADOPTION_STARTED, ADOPTION_COMPLETED
+    private String eventType; // ADOPTION_CREATED, ADOPTION_CANCELLED, ADOPTION_STARTED, ADOPTION_COMPLETED
 
     @JsonProperty("timestamp")
-    public LocalDateTime timestamp;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    private LocalDateTime timestamp;
 
     // Конструктор за замовчуванням (потрібен для Jackson десеріалізації)
     public AdoptionMessage() {
         this.timestamp = LocalDateTime.now();
     }
 
+    // Простий конструктор (для зворотної сумісності з існуючим кодом)
     public AdoptionMessage(Long animalId, String adopterName) {
         this.animalId = animalId;
         this.adopterName = adopterName;
@@ -36,6 +53,7 @@ public class AdoptionMessage {
         this.timestamp = LocalDateTime.now();
     }
 
+    // Повний конструктор
     public AdoptionMessage(Long animalId, String adopterName, Long adoptionId,
                            LocalDateTime adoptionDate, String eventType) {
         this.animalId = animalId;

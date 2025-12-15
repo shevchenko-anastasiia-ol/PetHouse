@@ -6,27 +6,137 @@ import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import io.smallrye.reactive.messaging.annotations.Blocking;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.jboss.logging.Logger;
+
 @ApplicationScoped
 public class HealthRecordService {
+    private static final Logger LOG = Logger.getLogger(HealthRecordService.class);
+
     @Inject
     @RestClient
     AnimalRestClient animalClient;
 
+    @Incoming("adoption-events")
+    @Blocking
+    @Transactional
+    public void onAdoptionEvent(AdoptionMessage message) {
+        LOG.infof("📩 Received adoption event: %s", message);
+        LOG.infof("Animal ID: %d, Event Type: %s, Adopter: %s",
+                message.getAnimalId(), message.getEventType(), message.getAdopterName());
+
+
+        try {
+            String eventType = message.getEventType();
+
+            if ("ADOPTION_CREATED".equals(eventType) || "ADOPTION_STARTED".equals(eventType)) {
+                handleAdoptionCreated(message);
+            } else if ("ADOPTION_CANCELLED".equals(eventType)) {
+                handleAdoptionCancelled(message);
+            } else if ("ADOPTION_COMPLETED".equals(eventType)) {
+                handleAdoptionCompleted(message);
+            } else {
+                LOG.warnf("⚠️ Unknown event type: %s", eventType);
+            }
+        } catch (Exception e) {
+            LOG.errorf(e, "❌ Error processing adoption message: %s", message);
+            throw e; // RabbitMQ retry mechanism
+        }
+    }
+
+    /**
+     * Обробка створення усиновлення - встановлюємо isAdopted = true
+     */
+    private void handleAdoptionCreated(AdoptionMessage message) {
+        Long animalId = message.getAnimalId();
+        LOG.infof("🔄 Handling ADOPTION_CREATED for animal ID=%d", animalId);
+
+        List<HealthRecord> records = HealthRecord.list("animalId", animalId);
+        LOG.infof("Found %d health record(s) for animal ID=%d", records.size(), animalId);
+
+        if (records.isEmpty()) {
+            LOG.warnf("⚠️ No health records found for animal ID=%d, creating new one", animalId);
+            createHealthRecordForAdoption(message);
+        } else {
+            int updatedCount = 0;
+            for (HealthRecord record : records) {
+                if (!record.isAdopted) {
+                    record.isAdopted = true;
+                    record.persist();
+                    updatedCount++;
+                }
+            }
+            // Додатковий flush на всякий випадок
+            HealthRecord.getEntityManager().flush();
+
+            LOG.infof("✅ Updated %d health record(s) for animal ID=%d (isAdopted=true)",
+                    updatedCount, animalId);
+        }
+    }
+
+    /**
+     * Обробка скасування усиновлення - встановлюємо isAdopted = false
+     */
+    private void handleAdoptionCancelled(AdoptionMessage message) {
+        Long animalId = message.getAnimalId();
+
+        List<HealthRecord> records = HealthRecord.list("animalId", animalId);
+
+        int updatedCount = 0;
+        for (HealthRecord record : records) {
+            if (record.isAdopted) {
+                record.isAdopted = false;
+                record.persist();
+                updatedCount++;
+            }
+        }
+
+        LOG.infof("✅ Updated %d health record(s) for animal ID=%d (isAdopted=false)",
+                updatedCount, animalId);
+    }
+
+    /**
+     * Обробка завершення усиновлення
+     */
+    private void handleAdoptionCompleted(AdoptionMessage message) {
+        LOG.infof("ℹ️ Adoption completed for animal ID=%d", message.getAnimalId());
+        // Можна додати додаткову логіку
+    }
+
+    /**
+     * Створення health record якщо не існує (при усиновленні)
+     */
+    private void createHealthRecordForAdoption(AdoptionMessage message) {
+        HealthRecord record = new HealthRecord();
+        record.animalId = message.getAnimalId();
+        record.isAdopted = true;
+        record.visitDate = LocalDate.now();
+        record.healthStatus = "Healthy";
+        record.notes = "Auto-created on adoption. Adopter: " + message.getAdopterName();
+
+        record.persist();
+
+        LOG.infof("✅ Created new health record for adopted animal ID=%d", message.getAnimalId());
+    }
+
     @Transactional
     public HealthRecord create(HealthRecord record) {
-        System.out.println("HealthRecordService.create() called with animalId: " + record.animalId);
+        LOG.infof("HealthRecordService.create() called with animalId: %d", record.animalId);
         try {
             Animal animal = animalClient.getById(record.animalId);
+            LOG.infof("Animal retrieved: %s", (animal != null ? animal.name : "null"));
             System.out.println("Animal retrieved: " + (animal != null ? animal.name : "null"));
             if (animal == null) throw new RuntimeException("Animal not found");
 
             if (record.id != null) {
                 HealthRecord existing = HealthRecord.findById(record.id);
                 if (existing != null) {
-                    System.out.println("Health record exists, updating instead");
+                    LOG.info("Health record exists, updating instead");
                     return update(record);
                 }
             }
@@ -40,13 +150,13 @@ public class HealthRecordService {
                 record.visitDate = LocalDate.now();
             }
 
-            System.out.println("Persisting health record...");
+            LOG.info("Persisting health record...");
             record.persist();
-            System.out.println("Health record persisted with ID: " + record.id);
+            LOG.infof("Health record persisted with ID: %d", record.id);
 
-            System.out.println("Updating animal health status to: " + record.healthStatus);
+            LOG.infof("Updating animal health status to: %s", record.healthStatus);
             animalClient.updateHealthStatus(record.animalId, record.healthStatus);
-            System.out.println("Animal health status updated successfully");
+            LOG.info("Animal health status updated successfully");
 
             return record;
         } catch (Exception e) {

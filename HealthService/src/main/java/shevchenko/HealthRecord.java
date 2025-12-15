@@ -7,7 +7,7 @@ import jakarta.persistence.Table;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 
 @Entity
-@Table(name = "health_records")
+@Table(name = "health_records", schema = "health")
 public class HealthRecord extends PanacheEntity {
     @Column(name = "animalid")
     public Long animalId;
@@ -28,9 +28,12 @@ public class HealthRecord extends PanacheEntity {
     @Column(name = "healthstatus")
     public String healthStatus;
 
+    @Column(name = "isadopted", nullable = false)
+    public boolean isAdopted = false;
+
     public HealthRecord() {}
 
-    public HealthRecord(Long id, Long animalId, LocalDate visitDate, String vetName, String diagnosis, String treatment, String notes, LocalDate nextAppointment, String healthStatus) {
+    public HealthRecord(Long id, Long animalId, LocalDate visitDate, String vetName, String diagnosis, String treatment, String notes, LocalDate nextAppointment, String healthStatus, boolean isAdopted) {
         this.id = id;
         this.animalId = animalId;
         this.visitDate = visitDate;
@@ -40,5 +43,6 @@ public class HealthRecord extends PanacheEntity {
         this.notes = notes;
         this.nextAppointment = nextAppointment;
         this.healthStatus = healthStatus;
+        this.isAdopted = isAdopted;
     }
 }

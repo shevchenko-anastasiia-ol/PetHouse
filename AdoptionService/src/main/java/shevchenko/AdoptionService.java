@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import jakarta.inject.Inject;
+import java.time.LocalDateTime;
 
 
 
@@ -48,16 +49,7 @@ public class AdoptionService {
 
         adoption.persistAndFlush();
 
-        Long animalId = adoption.animalId;
-        String adopterName = adoption.adopterName;
-
-
-        adoptionEventProducer.send(
-                new AdoptionMessage(animalId, adopterName)
-        ).subscribe().with(
-            result -> {},
-            failure -> System.err.println("❌ [ADOPTION SERVICE] Failed to send message: " + failure.getMessage())
-        );
+        sendAdoptionMessage(adoption, "ADOPTION_CREATED");
 
 
         return adoption;
@@ -80,7 +72,13 @@ public class AdoptionService {
 
     @Transactional
     public boolean deleteAdoption(Long id) {
-        return Adoption.deleteById(id);
+        Adoption adoption = Adoption.findById(id);
+        if (adoption != null) {
+            // Відправка повідомлення про скасування
+            sendAdoptionMessage(adoption, "ADOPTION_CANCELLED");
+            return Adoption.deleteById(id);
+        }
+        return false;
     }
 
     @Transactional
@@ -94,17 +92,11 @@ public class AdoptionService {
         Response r = animalClient.adoptAnimal(adoption.animalId);
         if (r.getStatus() == 200) {
             System.out.println("Adoption confirmed: " + r.readEntity(String.class));
+
+            // Відправка повідомлення про успішне усиновлення
+            sendAdoptionMessage(adoption, "ADOPTION_CREATED");
             
-            // Відправка асинхронного повідомлення про успішне усиновлення
-            Long animalId = adoption.animalId;
-            String adopterName = adoption.adopterName;
-            
-            AdoptionMessage message = new AdoptionMessage(animalId, adopterName);
-            adoptionEventProducer.send(message)
-                .subscribe().with(
-                    result -> System.out.println("✅ [ADOPTION SERVICE] Adoption message sent: Animal ID=" + animalId + ", Adopter=" + adopterName),
-                    failure -> System.err.println("❌ [ADOPTION SERVICE] Failed to send message: " + failure.getMessage())
-                );
+
         } else if (r.getStatus() == 404) {
             throw new RuntimeException("Animal not found");
         } else if (r.getStatus() == 409) {
@@ -119,47 +111,75 @@ public class AdoptionService {
     @Transactional
     public Adoption start(String adopterName, Long animalId) {
         Log.infof("Starting adoption for %s with animal %s", adopterName, animalId);
-        
+
         Optional<Adoption> adoptionOptional = findByAdopterAndAnimalIdsOptional(adopterName, animalId);
         Adoption adoption;
-        
+
         if (adoptionOptional.isPresent()) {
-            // received confirmed adoption before
             adoption = adoptionOptional.get();
             if (adoption.adoptionDate == null) {
                 adoption.adoptionDate = LocalDate.now();
             }
             adoption.persist();
         } else {
-            // adoption starting right now
             adoption = new Adoption();
             adoption.adopterName = adopterName;
             adoption.animalId = animalId;
             adoption.adoptionDate = LocalDate.now();
             adoption.persist();
         }
-        
+
+        // Відправка повідомлення про початок процесу усиновлення
+        sendAdoptionMessage(adoption, "ADOPTION_STARTED");
+
         return adoption;
     }
 
     @Transactional
     public Adoption end(String adopterName, Long animalId) {
         Log.infof("Ending adoption for %s with animal %s", adopterName, animalId);
-        
+
         Adoption adoption = findByAdopterAndAnimalIdsOptional(adopterName, animalId)
-            .orElseThrow(() -> new jakarta.ws.rs.NotFoundException("Adoption not found"));
-        
+                .orElseThrow(() -> new jakarta.ws.rs.NotFoundException("Adoption not found"));
+
         if (adoption.adoptionDate == null) {
             Log.warn("Adoption is not confirmed: " + adoption);
-            // trigger error processing
         }
-        
+
         Response animalResponse = animalClient.getAnimalById(adoption.animalId);
         if (animalResponse.getStatus() == 200) {
             Log.infof("Animal information retrieved for adoption: %s", adoption);
         }
-        
+
+        // Відправка повідомлення про завершення
+        sendAdoptionMessage(adoption, "ADOPTION_COMPLETED");
+
         return adoption;
+    }
+
+    /**
+     * Універсальний метод для відправки повідомлень про усиновлення
+     */
+    private void sendAdoptionMessage(Adoption adoption, String eventType) {
+        LocalDateTime adoptionDateTime = adoption.adoptionDate != null
+                ? adoption.adoptionDate.atStartOfDay()
+                : LocalDateTime.now();
+
+        AdoptionMessage message = new AdoptionMessage(
+                adoption.animalId,
+                adoption.adopterName,
+                adoption.id,
+                adoptionDateTime,
+                eventType
+        );
+
+        adoptionEventProducer.send(message)
+                .subscribe().with(
+                        result -> Log.infof("✅ [ADOPTION SERVICE] Message sent: %s for Animal ID=%d",
+                                eventType, adoption.animalId),
+                        failure -> Log.errorf("❌ [ADOPTION SERVICE] Failed to send message: %s",
+                                failure.getMessage())
+                );
     }
 
 
